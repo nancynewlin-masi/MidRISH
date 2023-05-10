@@ -22,6 +22,9 @@ In this code, we do the following steps:
 
 # Caveat: My data has different b-values, what do I do?
 My data is within 500 < b < 1500 
+
 -> For RISH to be most effective, we believe we need to project the signal to the same b-value. 
+
 My data has bigger differences than this...
+
 -> Unfortunatly, we cannot support large b-value jumps at this time (ex. b=1000, b=2000) :(
