@@ -3,8 +3,10 @@ export BVEC=${2}
 export BVAL=${3}
 export MASK=${4} # mask in DWI space
 export T1=${5}
-export OUTDIR=${6}
-export ID=${7}
+export OUTDIR=${6} # location to store fa, md, ad and tensor images
+export ID=${7} # name of template to apply
+
+export MAX_ORDER=4 # change depending on distribution of b-vector directions on the sphere
 
 # get B0
 echo "Checking for B0 file..."
@@ -26,7 +28,7 @@ fi
 
 export B0=${OUTDIR}/b0.nii.gz
 echo "Get SH from DWI (control)"
-amp2sh ${DWI} ${OUTDIR}/sh_uncorrected.nii.gz -fslgrad ${BVEC} ${BVAL} -force -lmax 4 -normalise
+amp2sh ${DWI} ${OUTDIR}/sh_uncorrected.nii.gz -fslgrad ${BVEC} ${BVAL} -force -lmax ${MAX_ORDER} -normalise
 
 rm ${OUTDIR}/sh_norm.nii.gz
 
