@@ -1,4 +1,4 @@
-export DWI=${1}
+export DWI=${1} # data to apply harmonization to
 export BVEC=${2}
 export BVAL=${3}
 export MASK=${4} # mask in DWI space
@@ -33,17 +33,16 @@ amp2sh ${DWI} ${OUTDIR}/sh_uncorrected.nii.gz -fslgrad ${BVEC} ${BVAL} -force -l
 rm ${OUTDIR}/sh_norm.nii.gz
 
 echo "Correct Basis"
-python3.8 dipy2mrtrix.py ${OUTDIR}/sh_uncorrected.nii.gz ${OUTDIR}/sh_norm.nii.gz
+python3.8 helper_scripts/dipy2mrtrix.py ${OUTDIR}/sh_uncorrected.nii.gz ${OUTDIR}/sh_norm.nii.gz
 
 echo "Clean uncorrected SH ${OUTDIR}/sh_uncorrected.nii.gz"
 rm ${OUTDIR}/sh_uncorrected.nii.gz
 
 echo "Get SF from SH (control)"
 sh2amp ${OUTDIR}/sh_norm.nii.gz ${OUTDIR}/transposed_bvecs.bvec  ${OUTDIR}/sf_control_nob0.nii.gz  -fslgrad ${BVEC} ${BVAL} -nonnegative  -force
-python3.8 replace_b0s_ones.py --from ${DWI} --to ${OUTDIR}/sf_control_nob0.nii.gz  --output ${OUTDIR}/sf_control.nii.gz --bvecs ${BVEC} --bvals ${BVAL}
+python3.8 helper_scripts/replace_b0s_ones.py --from ${DWI} --to ${OUTDIR}/sf_control_nob0.nii.gz  --output ${OUTDIR}/sf_control.nii.gz --bvecs ${BVEC} --bvals ${BVAL}
 
 echo "Register template to subj space"
-#python3.8 /nfs/masi/newlinnr/midrish/registertemplate2subj.py ${OUTDIR}/b0.nii.gz ${T1} ${OUTDIR} ${ID}
 echo "EPI Reg B0->T1"
 bet ${T1} ${OUTDIR}/T1_bet.nii.gz
 
@@ -53,7 +52,7 @@ echo "Convert transform to go in oppisite direction"
 convert_xfm -omat ${OUTDIR}/t12b0.mat -inverse ${OUTDIR}/b02t1.mat
 
 echo "registration step 1: MNI->T1"
-python3.8 registerMNI2T1.py ${T1} ${OUTDIR} ${ID}
+python3.8 helper_scripts/registerMNI2T1.py ${T1} ${OUTDIR} ${ID}
 
 echo "Apply transform to atlas"
 flirt -in ${OUTDIR}/template_i0_T1.nii.gz -ref ${OUTDIR}/b0.nii.gz -applyxfm -init ${OUTDIR}/t12b0.mat -interp nearestneighbour -out ${OUTDIR}/template_i0_subj_norm.nii.gz
@@ -62,17 +61,17 @@ flirt -in ${OUTDIR}/template_i4_T1.nii.gz -ref ${OUTDIR}/b0.nii.gz -applyxfm -in
 
 
 echo "Apply Scaling to SH to get harmonized SH"
-python3.8 combinetemplate.py ${OUTDIR}/template_i0_subj_norm.nii.gz ${OUTDIR}/template_i2_subj_norm.nii.gz ${OUTDIR}/template_i4_subj_norm.nii.gz ${OUTDIR}/template_combined_subj_norm.nii.gz
-python3.8 apply_template_A2B.py ${OUTDIR}/template_combined_subj_norm.nii.gz  ${OUTDIR}/sh_norm.nii.gz ${OUTDIR}/sh_rish_norm.nii.gz
+python3.8 helper_scripts/combinetemplate.py ${OUTDIR}/template_i0_subj_norm.nii.gz ${OUTDIR}/template_i2_subj_norm.nii.gz ${OUTDIR}/template_i4_subj_norm.nii.gz ${OUTDIR}/template_combined_subj_norm.nii.gz
+python3.8 helper_scripts/apply_template_A2B.py ${OUTDIR}/template_combined_subj_norm.nii.gz  ${OUTDIR}/sh_norm.nii.gz ${OUTDIR}/sh_rish_norm.nii.gz
 sh2amp ${OUTDIR}/sh_rish_norm.nii.gz ${OUTDIR}/transposed_bvecs.bvec  ${OUTDIR}/sf_rish_norm_nob0.nii.gz  -fslgrad ${BVEC} ${BVAL} -nonnegative  -force
 
 echo "Apply Mid RISH scaling to SH to get harmonized SH"
-python3.8 apply_template_A2mid.py ${OUTDIR}/template_combined_subj_norm.nii.gz  ${OUTDIR}/sh_norm.nii.gz ${OUTDIR}/sh_mid_norm.nii.gz
+python3.8 helper_scripts/apply_template_A2mid.py ${OUTDIR}/template_combined_subj_norm.nii.gz  ${OUTDIR}/sh_norm.nii.gz ${OUTDIR}/sh_mid_norm.nii.gz
 sh2amp ${OUTDIR}/sh_mid_norm.nii.gz ${OUTDIR}/transposed_bvecs.bvec  ${OUTDIR}/sf_mid_norm_nob0.nii.gz  -fslgrad ${BVEC} ${BVAL} -nonnegative  -force
 
 echo "Get SF from harmonized SH"
-python3.8 replace_b0s_ones.py --from ${DWI} --to ${OUTDIR}/sf_rish_norm_nob0.nii.gz  --output ${OUTDIR}/sf_rish_norm.nii.gz --bvecs ${BVEC} --bvals ${BVAL}
-python3.8 replace_b0s_ones.py --from ${DWI} --to ${OUTDIR}/sf_mid_norm_nob0.nii.gz  --output ${OUTDIR}/sf_mid_norm.nii.gz --bvecs ${BVEC} --bvals ${BVAL}
+python3.8 helper_scripts/replace_b0s_ones.py --from ${DWI} --to ${OUTDIR}/sf_rish_norm_nob0.nii.gz  --output ${OUTDIR}/sf_rish_norm.nii.gz --bvecs ${BVEC} --bvals ${BVAL}
+python3.8 helper_scripts/replace_b0s_ones.py --from ${DWI} --to ${OUTDIR}/sf_mid_norm_nob0.nii.gz  --output ${OUTDIR}/sf_mid_norm.nii.gz --bvecs ${BVEC} --bvals ${BVAL}
 
 echo "Get tensor from SF"
 dwi2tensor ${OUTDIR}/sf_control.nii.gz ${OUTDIR}/tensor_control.nii.gz   --mask ${MASK} -fslgrad ${BVEC} ${BVAL} -force
