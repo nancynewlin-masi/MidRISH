@@ -3,16 +3,14 @@
 # Creates template to apply to each subject at each site.
 # load libraries
 
-# Must use registered RISH images
+# Prior to this script, user must have run Calculate_RISH_Features.sh, then registered all RISH features to MNI space. 
+# This script will scrape the directories defined in PATH_A and PATH_B for files named 
 
 import os
 import nibabel as nib
 import numpy as np
 
 
-#path ="/nfs/masi/newlinnr/masivar/scanner1/"
-#path ="/nfs/masi/newlinnr/blsaatlases/"
-#path ="/nfs/masi/newlinnr/midrish/ADNI/SiteA/"
 path ="/nfs/masi/newlinnr/midrish/VMAP/"
 rish0imagesA = []
 rish2imagesA = []
